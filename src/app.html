@@ -343,14 +343,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     ...["Maaş", "Bonus", "Əlavə iş", "İnvestisiya gəliri", "Digər"]
       .map((name, i) => ({ id: "i" + i, name, kind: "income" }))
   ];
-  // İstifadəçinin öz ödəniş xatırladıcıları (ilk dəfə əlavə olunur, sonra tətbiqdə dəyişdirilə bilər)
-  const IPOTEKA_CAT = { id: "e-ipoteka", name: "İpoteka", kind: "expense" };
-  const DEFAULT_REMINDERS = [
-    { id: "r-ipoteka", title: "İpoteka", days: [1, 5], type: "credit", catId: "e-ipoteka", amount: null },
-    { id: "r-kommunal", title: "Kommunal", days: [5], type: "need", catId: "e4", amount: null },
-    { id: "r-ata-internet", title: "Ata internet", days: [14], type: "need", catId: "e13", amount: null },
-    { id: "r-ev-internet", title: "Ev internet", days: [22], type: "need", catId: "e13", amount: null }
-  ];
+  // Köhnə versiyanın standart xatırladıcıları: dəyişdirilməyiblərsə silinir, siyahı boş başlayır
+  const OLD_DEFAULT_REMINDERS = { "r-ipoteka": "İpoteka", "r-kommunal": "Kommunal", "r-ata-internet": "Ata internet", "r-ev-internet": "Ev internet" };
   const MONTHS = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "İyun", "İyul", "Avqust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"];
   const WEEKDAYS = ["Bazar", "Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə"];
   const PALETTE = ["#0f766e", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#ca8a04", "#16a34a", "#0891b2", "#9333ea", "#be123c"];
@@ -417,7 +411,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       state.done = data?.done || {};
       state.plan = normPlan(data?.plan);
       state.ready = true;
-      const migrated = !data?.reminders && this.addDefaultReminders();
+      const migrated = this.dropOldDefaults();
       if (!data || migrated) this.persistLocal();
       render();
     },
@@ -439,12 +433,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           state.done = d.done || {};
           state.plan = normPlan(d.plan);
           gotCats = true;
-          if (!d.reminders && !s.metadata.fromCache && !this.migrated) { this.migrated = true; this.addDefaultReminders(); this.saveMeta(); }
+          if (!s.metadata.fromCache && !this.migrated) { this.migrated = true; if (this.dropOldDefaults()) this.saveMeta(); }
           done();
         }
         else if (!s.metadata.fromCache) {
           state.categories = DEFAULT_CATS.slice(); state.reminders = []; state.done = {};
-          this.migrated = true; this.addDefaultReminders();
+          this.migrated = true;
           gotCats = true; done();
           this.saveMeta();
         }
@@ -469,11 +463,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       if (this.mode === "local") return this.persistLocal();
       try { await this.recs.doc(id).delete(); } catch (e) { toast("Silmək alınmadı."); }
     },
-    addDefaultReminders() {
-      if (!state.categories.some(c => c.id === IPOTEKA_CAT.id)) state.categories = [...state.categories, IPOTEKA_CAT];
-      const have = new Set(state.reminders.map(r => r.id));
-      state.reminders = [...state.reminders, ...DEFAULT_REMINDERS.filter(r => !have.has(r.id))];
-      return true;
+    dropOldDefaults() {
+      const keep = state.reminders.filter(r => OLD_DEFAULT_REMINDERS[r.id] !== r.title);
+      const changed = keep.length !== state.reminders.length;
+      state.reminders = keep;
+      return changed;
     },
     // Kateqoriyalar, xatırladıcılar və "ödənildi" qeydləri bir sənəddə saxlanılır
     async saveMeta() {
