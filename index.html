@@ -26,7 +26,7 @@
   --muted: #5f6c68;
   --line: #dde3e1;
   --accent: #0f766e;
-  --accent-fg: #ffffff;
+  --accent-fg: #ffffff; --seg-on: #ffffff;
   --income: #15803d;
   --expense: #b42318;
   --need: #2563eb;
@@ -41,26 +41,26 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0d1412; --surface: #16201d; --surface-2: #1f2b28; --fg: #e8efec; --muted: #94a39e; --line: #263431;
-    --accent: #2dd4bf; --accent-fg: #062b27; --income: #4ade80; --expense: #f87171;
+    --accent: #2dd4bf; --accent-fg: #062b27; --seg-on: #3d544e; --income: #4ade80; --expense: #f87171;
     --need: #60a5fa; --want: #f472b6; --invest: #4ade80; --credit: #fb923c;
     --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0d1412; --surface: #16201d; --surface-2: #1f2b28; --fg: #e8efec; --muted: #94a39e; --line: #263431;
-  --accent: #2dd4bf; --accent-fg: #062b27; --income: #4ade80; --expense: #f87171;
+  --accent: #2dd4bf; --accent-fg: #062b27; --seg-on: #3d544e; --income: #4ade80; --expense: #f87171;
   --need: #60a5fa; --want: #f472b6; --invest: #4ade80; --credit: #fb923c;
   --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
 }
 :root[data-mode="light"] {
   --bg: #f3f5f4; --surface: #ffffff; --surface-2: #e8edeb; --fg: #16201d; --muted: #5f6c68; --line: #dde3e1;
-  --accent: #0f766e; --accent-fg: #ffffff; --income: #15803d; --expense: #b42318;
+  --accent: #0f766e; --accent-fg: #ffffff; --seg-on: #ffffff; --income: #15803d; --expense: #b42318;
   --need: #2563eb; --want: #db2777; --invest: #16a34a; --credit: #ea580c;
   --shadow: 0 1px 2px rgba(16, 40, 34, .06), 0 4px 16px rgba(16, 40, 34, .06); color-scheme: light;
 }
 :root[data-mode="dark"] {
   --bg: #0d1412; --surface: #16201d; --surface-2: #1f2b28; --fg: #e8efec; --muted: #94a39e; --line: #263431;
-  --accent: #2dd4bf; --accent-fg: #062b27; --income: #4ade80; --expense: #f87171;
+  --accent: #2dd4bf; --accent-fg: #062b27; --seg-on: #3d544e; --income: #4ade80; --expense: #f87171;
   --need: #60a5fa; --want: #f472b6; --invest: #4ade80; --credit: #fb923c;
   --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
 }
@@ -181,7 +181,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
 .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 3px; }
 .seg button { border: 0; background: transparent; border-radius: 8px; padding: 8px; font-weight: 600; font-size: 15px; color: var(--muted); }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
+.seg button[aria-pressed="true"] { background: var(--seg-on, var(--surface)); color: var(--fg); box-shadow: var(--shadow); }
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
