@@ -12,7 +12,7 @@ Sadə şəxsi xərc və gəlir izləmə PWA-sı. İstifadəçi Azərbaycan dilin
 - Hər istifadəçinin məlumatı yalnız öz telefonunda, `localStorage`-da (`budcem.v1` açarı) saxlanılır. Server yoxdur, istifadəçilər bir-birinin məlumatını görmür.
 - Saxlanılan sahələr: `categories`, `records`, `reminders`, `done`, `plan`. Köhnə məlumatı pozmayın: yeni sahə əlavə edəndə boş olduqda standart dəyər verin.
 - Kateqoriyalar bölməsində JSON ehtiyat nüsxə (yüklə / bərpa et) var.
-- Taksit kartı: kartla alış adi xərcdir, `pay: "card"` sahəsi ilə (bir dəfə sayılır). Karta pul köçürmə `kind: "cardpay"` qeydidir: xərc deyil, hesabatlarda sayılmır, yalnız kart borcunu azaldır. Borc = kartla xərclər − karta ödənişlər (bütün vaxt).
+- Taksit kartı: kartla alış adi xərcdir, `pay: "card"` sahəsi ilə (bir dəfə sayılır). Karta pul köçürmə `kind: "cardpay"` qeydidir: xərc deyil, hesabatlarda sayılmır, yalnız kart borcunu azaldır. Borc = `cardOpening` (ilkin borc, meta sənəddə) + kartla xərclər − karta ödənişlər. "Borcu düzəlt" fərqi `cardOpening`-ə əlavə edir.
 - Kodda `window.claude` yoxlanışları claude.ai artifact versiyası üçündür; ayrıca saytda onlar işləmir və localStorage istifadə olunur.
 
 ## Əsas funksiyalar
