@@ -883,7 +883,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     const exp = list.filter(r => r.kind === "expense");
     const inc = sum(list.filter(r => r.kind === "income"));
     const out = sum(exp);
-    const bal = inc - out;
+    // Kartla xərc xərcdir, amma öz balansından çıxmır; karta ödəniş isə balansdan çıxır
+    const cardPaid = sum(list.filter(r => r.kind === "cardpay"));
+    const bal = inc - (out - sum(exp.filter(isCardExp))) - cardPaid;
 
     const byType = TYPES.map(t => ({ ...t, total: sum(exp.filter(r => r.type === t.id)) }));
     // Donut: hər başlıq üçün bir qövs
