@@ -878,6 +878,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
   }
 
+  // Bir qrupun təsiri: gəlir − balansdan çıxan xərc − karta ödəniş (kartla xərc balansdan çıxmır)
+  const netOf = list => sum(list.filter(r => r.kind === "income"))
+    - sum(list.filter(r => r.kind === "expense" && !isCardExp(r)))
+    - sum(list.filter(r => r.kind === "cardpay"));
+  // Seçilmiş aydan əvvəlki bütün aylardan qalan qalıq
+  function carryIn() {
+    const start = ymd(new Date(state.month.getFullYear(), state.month.getMonth(), 1));
+    return netOf(state.records.filter(r => r.date && r.date < start));
+  }
+
   function summaryView() {
     const list = monthRecords();
     const exp = list.filter(r => r.kind === "expense");
@@ -885,7 +895,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     const out = sum(exp);
     // Kartla xərc xərcdir, amma öz balansından çıxmır; karta ödəniş isə balansdan çıxır
     const cardPaid = sum(list.filter(r => r.kind === "cardpay"));
-    const bal = inc - (out - sum(exp.filter(isCardExp))) - cardPaid;
+    const bal = carryIn() + netOf(list);
 
     const byType = TYPES.map(t => ({ ...t, total: sum(exp.filter(r => r.type === t.id)) }));
     // Donut: hər başlıq üçün bir qövs
