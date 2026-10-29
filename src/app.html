@@ -142,6 +142,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .track i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
 
 .badge { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: #fff; flex: none; }
+.badge svg { width: 18px; height: 18px; }
 
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; font-size: 15px; }
@@ -376,7 +377,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
   const dayTitle = s => { const d = parseYmd(s); return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}`; };
   const hue = name => { let h = 0; for (const c of name) h = (h * 31 + c.codePointAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; };
-  const badge = name => `<span class="badge" style="background:${hue(name)}">${esc((name || "?").trim().charAt(0).toLocaleUpperCase("az"))}</span>`;
+  // Bəzi gəlir maddələri üçün ümumi ikon (brend loqosu deyil)
+  const CAT_ICONS = {
+    "Cashback": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 15l6-6"/><circle cx="9.5" cy="9.5" r=".9" fill="currentColor"/><circle cx="14.5" cy="14.5" r=".9" fill="currentColor"/></svg>`,
+    "ƏDV gerialı": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5z"/><path d="M9 8h6M9 12h6"/></svg>`
+  };
+  const badge = name => `<span class="badge" style="background:${hue(name)}">${CAT_ICONS[name] || esc((name || "?").trim().charAt(0).toLocaleUpperCase("az"))}</span>`;
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 
   // ---------- Vəziyyət ----------
