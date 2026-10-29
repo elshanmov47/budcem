@@ -115,6 +115,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .card { background: var(--surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+.backup-nag { display: grid; gap: 10px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--credit) 55%, transparent), var(--shadow); }
+.backup-nag p { margin: 0; font-size: 14px; }
+.backup-nag b { display: block; font-size: 15px; margin-bottom: 2px; }
 .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
 
 .balance .big { font-family: var(--font-display); font-size: 36px; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 14px; }
@@ -417,6 +420,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   // claude.ai daxilində: hər istifadəçinin şəxsi verilənlər bazası (cihazlar arasında sinxron).
   // Ayrıca PWA kimi yerləşdiriləndə: brauzerin yaddaşı (localStorage).
   const LS_KEY = "budcem.v1";
+  // Son ehtiyat nüsxənin vaxtı: 7 gündən çox keçibsə Xülasədə xatırladılır
+  const BACKUP_KEY = "budcem.lastBackup";
+  function backupNag() {
+    if (store.mode !== "local" || !state.records.length) return "";
+    let last = 0;
+    try { last = Number(localStorage.getItem(BACKUP_KEY)) || 0; } catch (e) {}
+    const days = last ? Math.floor((Date.now() - last) / 86400000) : null;
+    if (days !== null && days < 7) return "";
+    return `<section class="card backup-nag">
+      <p><b>Ehtiyat nüsxə götürün</b>${days === null ? "Hələ heç vaxt nüsxə götürülməyib." : `Son nüsxə ${days} gün əvvəl götürülüb.`} Tətbiq telefondan silinsə, məlumat yalnız nüsxədən qaytarıla bilər.</p>
+      <button class="primary" data-backup>İndi yüklə</button>
+    </section>`;
+  }
   const store = {
     mode: "local",
     async init() {
@@ -954,6 +970,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           <div class="out"><small>Xərc</small><b class="num">${money(out)}</b></div>
         </div>
       </section>
+      ${backupNag()}
       ${toolTiles()}
       <section class="card">
         <p class="label">Xərc başlıqları</p>
@@ -1552,6 +1569,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     else if (b.hasAttribute("data-backup")) {
       const data = { app: "budcem", version: 1, saved: new Date().toISOString(), categories: state.categories, records: state.records, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening, catsVersion: state.catsVersion };
       saveFile(`Budcem-nusxe-${ymd(new Date())}.json`, new Blob([JSON.stringify(data)], { type: "application/json" }));
+      try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
+      render();
     }
     else if (b.hasAttribute("data-restore")) $("#restoreFile").click();
   });
