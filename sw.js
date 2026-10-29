@@ -1,5 +1,5 @@
 // Büdcəm: tətbiq fayllarını keşdə saxlayır ki, internet olmadan da açılsın
-const CACHE = "budcem-v12";
+const CACHE = "budcem-v13";
 const FILES = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
@@ -10,7 +10,8 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   // Əvvəlcə şəbəkə, alınmasa keş: yeniləmələr dərhal görünür
   e.respondWith(
-    fetch(e.request).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
+    // Öz fayllarımız üçün brauzerin HTTP keşini keçir ki, yeni versiya dərhal gəlsin
+    fetch(new URL(e.request.url).origin === location.origin ? new Request(e.request.url, { cache: "no-cache" }) : e.request).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
       .catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
   );
 });
