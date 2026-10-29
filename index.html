@@ -356,12 +356,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: "credit", title: "Kredit", color: "var(--credit)" }
   ];
   const TYPE = Object.fromEntries(TYPES.map(t => [t.id, t]));
+  // Sonradan əlavə olunan gəlir maddələri (catsVersion 2). Köhnə məlumata bir dəfə əlavə olunur.
+  const NEW_INCOME_CATS = [
+    { id: "i5", name: "Cashback", kind: "income" },
+    { id: "i6", name: "ƏDV gerialı", kind: "income" }
+  ];
+  const CATS_VERSION = 2;
   const DEFAULT_CATS = [
     ...["Qida", "Restoran", "Nəqliyyat", "Yanacaq", "Kommunal", "İcarə", "Ev təmiri", "Maşın təmiri", "Maşın sığortası",
         "Sənədləşmə", "Səhiyyə", "Təhsil", "Geyim", "Rabitə və internet", "Əyləncə", "Hədiyyə", "Digər"]
       .map((name, i) => ({ id: "e" + i, name, kind: "expense" })),
     ...["Maaş", "Bonus", "Əlavə iş", "İnvestisiya gəliri", "Digər"]
-      .map((name, i) => ({ id: "i" + i, name, kind: "income" }))
+      .map((name, i) => ({ id: "i" + i, name, kind: "income" })),
+    ...NEW_INCOME_CATS
   ];
   // Köhnə versiyanın standart xatırladıcıları: dəyişdirilməyiblərsə silinir, siyahı boş başlayır
   const OLD_DEFAULT_REMINDERS = { "r-ipoteka": "İpoteka", "r-kommunal": "Kommunal", "r-ata-internet": "Ata internet", "r-ev-internet": "Ev internet" };
@@ -401,6 +408,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     done: {},
     plan: { income: 0, types: {}, cats: {} },
     cardOpening: 0,
+    catsVersion: CATS_VERSION,
     planShowAll: false,
     ready: false
   };
@@ -432,13 +440,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       state.done = data?.done || {};
       state.plan = normPlan(data?.plan);
       state.cardOpening = Number(data?.cardOpening) || 0;
+      state.catsVersion = data ? (data.catsVersion || 1) : CATS_VERSION;
       state.ready = true;
-      const migrated = this.dropOldDefaults();
+      const migrated = [this.dropOldDefaults(), upgradeCats()].some(Boolean);
       if (!data || migrated) this.persistLocal();
       render();
     },
     persistLocal() {
-      try { localStorage.setItem(LS_KEY, JSON.stringify({ categories: state.categories, records: state.records, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening })); }
+      try { localStorage.setItem(LS_KEY, JSON.stringify({ categories: state.categories, records: state.records, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening, catsVersion: state.catsVersion })); }
       catch (e) { toast("Yadda saxlamaq alınmadı: brauzer yaddaşı əlçatan deyil."); }
     },
     initDb(db, id) {
@@ -455,12 +464,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           state.done = d.done || {};
           state.plan = normPlan(d.plan);
           state.cardOpening = Number(d.cardOpening) || 0;
+          state.catsVersion = d.catsVersion || 1;
           gotCats = true;
-          if (!s.metadata.fromCache && !this.migrated) { this.migrated = true; if (this.dropOldDefaults()) this.saveMeta(); }
+          if (!s.metadata.fromCache && !this.migrated) { this.migrated = true; if ([this.dropOldDefaults(), upgradeCats()].some(Boolean)) this.saveMeta(); }
           done();
         }
         else if (!s.metadata.fromCache) {
-          state.categories = DEFAULT_CATS.slice(); state.reminders = []; state.done = {}; state.cardOpening = 0;
+          state.categories = DEFAULT_CATS.slice(); state.reminders = []; state.done = {}; state.cardOpening = 0; state.catsVersion = CATS_VERSION;
           this.migrated = true;
           gotCats = true; done();
           this.saveMeta();
@@ -496,7 +506,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     async saveMeta() {
       render();
       if (this.mode === "local") return this.persistLocal();
-      try { await this.base.set({ categories: state.categories, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening }); }
+      try { await this.base.set({ categories: state.categories, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening, catsVersion: state.catsVersion }); }
       catch (e) { toast("Yadda saxlamaq alınmadı. Yenidən cəhd edin."); }
     },
     saveCategories(cats) { state.categories = cats; return this.saveMeta(); },
@@ -511,6 +521,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
   // ---------- Hesablamalar ----------
   const monthRecords = () => { const k = monthKey(state.month); return state.records.filter(r => r.date && r.date.startsWith(k)); };
+  // Köhnə məlumata yeni standart gəlir maddələrini bir dəfə əlavə edir; true qaytarırsa dəyişiklik olub
+  function upgradeCats() {
+    if (state.catsVersion >= CATS_VERSION) return false;
+    state.categories = [...state.categories, ...NEW_INCOME_CATS.filter(c => !state.categories.some(x => x.id === c.id))];
+    state.catsVersion = CATS_VERSION;
+    return true;
+  }
   const sum = list => list.reduce((a, r) => a + (Number(r.amount) || 0), 0);
 
   // ---------- Ekranlar ----------
@@ -1534,7 +1551,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     else if (b.dataset.cat) { const c = catById(b.dataset.cat); c && openCatSheet(c); }
     else if (b.hasAttribute("data-newcat")) openCatSheet(null);
     else if (b.hasAttribute("data-backup")) {
-      const data = { app: "budcem", version: 1, saved: new Date().toISOString(), categories: state.categories, records: state.records, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening };
+      const data = { app: "budcem", version: 1, saved: new Date().toISOString(), categories: state.categories, records: state.records, reminders: state.reminders, done: state.done, plan: state.plan, cardOpening: state.cardOpening, catsVersion: state.catsVersion };
       saveFile(`Budcem-nusxe-${ymd(new Date())}.json`, new Blob([JSON.stringify(data)], { type: "application/json" }));
     }
     else if (b.hasAttribute("data-restore")) $("#restoreFile").click();
@@ -1554,6 +1571,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         state.done = d.done || {};
         state.plan = normPlan(d.plan);
         state.cardOpening = Number(d.cardOpening) || 0;
+        state.catsVersion = d.catsVersion || 1;
+        upgradeCats();
         store.persistLocal(); render();
         toast(`Bərpa edildi: ${d.records.length} əməliyyat`);
       } catch (err) { toast("Bu fayl Büdcəm ehtiyat nüsxəsi deyil."); }
